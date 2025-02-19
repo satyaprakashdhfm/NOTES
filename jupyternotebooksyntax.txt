@@ -1,127 +1,166 @@
-# Basic Markdown Syntax
+# Jupyter Notebook Markdown and Equation Syntax Guide
 
-## 1. Headers
-```markdown
-# Main Title (h1)
-## Section Title (h2)
-### Subsection (h3)
+## Basic Markdown Syntax
+
+### Headers
+```
+# Header 1
+## Header 2
+### Header 3
 ```
 
-## 2. Tables
-```markdown
-| Column1 | Column2 | Column3 |
-|---------|---------|---------|
-| cell1   | cell2   | cell3   |
+### Text Formatting
+```
+*Italic text* or _italic text_
+**Bold text** or __bold text__
+***Bold and italic*** or ___bold and italic___
+~~Strikethrough text~~
 ```
 
-## 3. Text Formatting
-```markdown
-**bold text**
-*italic text*
-`code or formula`
-~~strikethrough~~
-
-Line break: Add two spaces at end of line  
-Or use <br> HTML tag
+### Lists
 ```
+* Unordered list item
+* Another item
+  * Nested item
+    * Further nested
 
-## 4. Lists
-```markdown
-1. Numbered list
+1. Ordered list item
 2. Second item
-   - Bullet point
-   - Another bullet
-     * Sub-bullet
-     * Another sub-bullet
+   1. Nested numbered item
 ```
 
-## 5. Code Blocks
-````markdown
+## Mathematical Equations
+
+### Inline Equations
+Use single dollar signs for inline equations:
+```
+This is an inline equation: $E = mc^2$
+```
+
+### Display Equations
+Use double dollar signs for centered display equations:
+```
+$$
+\begin{equation}
+F = ma
+\end{equation}
+$$
+```
+
+### Common Mathematical Notation
+```
+$$
+\sum_{i=1}^{n} x_i        # Summation
+\prod_{i=1}^{n} x_i       # Product
+\frac{numerator}{denominator}  # Fractions
+\sqrt{x}                   # Square root
+\sqrt[n]{x}               # nth root
+\vec{F}                   # Vector
+\bar{x}                   # Mean
+\partial x                # Partial derivative
+\int_{a}^{b} f(x)dx      # Integral
+\lim_{x \to \infty}      # Limit
+```
+
+### Matrix Notation
+```
+$$
+\begin{matrix}
+a & b \\
+c & d
+\end{matrix}
+$$
+
+$$
+\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}
+$$
+```
+
+## Code Blocks
+
+### Code Cell Formatting
 ```python
-# Code block with syntax highlighting
-def function():
-    pass
+# Python code block
+def example_function():
+    return "Hello World"
 ```
 
-```javascript
-// JavaScript code
-function example() {
-    return true;
+```R
+# R code block
+example_function <- function() {
+    return("Hello World")
 }
 ```
-````
 
-## 6. Links and Images
-```markdown
+### Inline Code
+Use backticks for inline code: `variable_name`
+
+## Advanced Features
+
+### Tables
+```
+| Column 1 | Column 2 |
+|----------|----------|
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |
+```
+
+### Block Quotes
+```
+> This is a block quote
+> It can span multiple lines
+```
+
+### Horizontal Rule
+```
+---
+```
+
+### Links and Images
+```
 [Link text](URL)
-![Image alt text](image_url)
+![Image alt text](image_URL)
 ```
 
-## 7. Blockquotes
-```markdown
-> This is a blockquote
-> Multiple lines
->> Nested blockquote
+### HTML in Markdown
+Jupyter Notebook also supports HTML:
+```html
+<div style="color: blue;">
+    Colored text using HTML
+</div>
 ```
 
-## 8. Tables with Formatting
-```markdown
-| Feature | Description | Example |
-|---------|-------------|---------|
-| Bold in table | Use **asterisks** | **like this** |
-| Code in table | Use `backticks` | `code here` |
-| Lists in table | Use<br>• bullet points<br>• another point | • example<br>• example |
+## Tips for Mathematical Documents
+
+### Equation Numbering
+```
+$$
+\begin{equation}
+E = mc^2 \tag{1}
+\end{equation}
+$$
 ```
 
-## 9. Mathematical Notation
-```markdown
-Simple inline: `x = y + z`
-
-Complex equation block:
-```math
-E = mc^2
+### Aligned Equations
 ```
-```
-
-## 10. Combined Example
-```markdown
-# Algorithm Comparison
-
-| Algorithm | Formula | Implementation |
-|-----------|---------|----------------|
-| **XGBoost** | `gain = GL²/HL`<br>where:<br>• GL = gradient<br>• HL = hessian | ```python
-def calc():
-    pass
-``` |
+$$
+\begin{align}
+y &= mx + b \\
+&= 2x + 3
+\end{align}
+$$
 ```
 
-## Common Markdown Special Characters:
-```markdown
-• Bullet (Alt/Option + 8)
-→ Arrow
-≤ Less than or equal
-≥ Greater than or equal
-∑ Summation
-∈ Element of
-∝ Proportional to
+### Cases
 ```
-
-## Tips for Tables:
-```markdown
-| Aspect | Details |
-|--------|---------|
-| Multi-line<br>content | Use `<br>` |
-| Lists in cells | • Point 1<br>• Point 2 |
-| Code in cells | `code here` |
-| Math in cells | `x = y + z` |
-```
-
-## Special Syntax for Code Blocks in Tables:
-```markdown
-| Algorithm | Code |
-|-----------|------|
-| Example | ```python
-def function():
-    return True
-``` |
+$$
+f(x) = \begin{cases}
+x^2 & \text{if } x > 0 \\
+0 & \text{if } x = 0 \\
+-x^2 & \text{if } x < 0
+\end{cases}
+$$
 ```
