@@ -1,0 +1,63 @@
+buildscript {
+    ext.kotlinx_serialization_version = '0.20.0'
+    ext.kotest_version = '4.2.3'
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.5.31'
+    id 'java-gradle-plugin'
+    id 'com.gradle.plugin-publish' version '0.10.1'
+    id 'com.github.hierynomus.license' version '0.16.1'
+}
+
+group = 'io.github.spencerpark'
+version = '9001'
+
+license {
+    include '**/*.groovy'
+    include '**/*.kt'
+    header = rootProject.file('LICENSE')
+    strictCheck true
+}
+tasks.build { dependsOn('licenseFormat') }
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinx_serialization_version"
+
+    testImplementation "io.kotest:kotest-runner-junit5:$kotest_version"
+    testImplementation "io.kotest:kotest-assertions-core:$kotest_version"
+    testImplementation "io.kotest:kotest-property:$kotest_version"
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+gradlePlugin {
+    plugins {
+        jupyterKernelInstaller {
+            id = 'io.github.spencerpark.jupyter-kernel-installer'
+            implementationClass = 'io.github.spencerpark.jupyter.gradle.JupyterKernelInstallerPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/SpencerPark/Jupyter-kernel-installer-gradle'
+    vcsUrl = 'https://github.com/SpencerPark/Jupyter-kernel-installer-gradle.git'
+    tags = ['jupyter', 'kernel', 'installer']
+    plugins {
+        jupyterKernelInstaller {
+            displayName = 'Jupyter kernel installer'
+            description = 'A Jupyter kernel packager and installer.'
+        }
+    }
+}
+

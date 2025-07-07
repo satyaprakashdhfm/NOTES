@@ -1,0 +1,16 @@
+{
+    "argv": [
+        "java",
+        "-jar",
+        "/home/zottel/workspace/ijava/Jupyter-kernel-installer-gradle/example/groovy/share/jupyter/kernels/groovy/groovy-dsl-example.jar",
+        "{connection_file}"
+    ],
+    "display_name": "Groovy DSL Example",
+    "language": "groovy",
+    "interrupt_mode": "message",
+    "env": {
+        "IN_JUPYTER_KERNEL": "1",
+        "KERNEL_VERSION": "unspecified",
+        "ENGINE": "ENGINE_1"
+    }
+}

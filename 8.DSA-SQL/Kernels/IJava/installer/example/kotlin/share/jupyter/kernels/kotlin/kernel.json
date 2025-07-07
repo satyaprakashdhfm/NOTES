@@ -1,0 +1,15 @@
+{
+    "argv": [
+        "java",
+        "-jar",
+        "/home/zottel/workspace/ijava/Jupyter-kernel-installer-gradle/example/kotlin/share/jupyter/kernels/kotlin/kotlin-dsl-example.jar",
+        "{connection_file}"
+    ],
+    "display_name": "Kotlin DSL Example",
+    "language": "kotlin",
+    "interrupt_mode": "message",
+    "env": {
+        "IN_JUPYTER_KERNEL": "1",
+        "ENGINE": "ENGINE_1"
+    }
+}
