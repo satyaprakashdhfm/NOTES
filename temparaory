@@ -1,0 +1,17 @@
+Choose FALSE statements-
+  Protocol version used by the client is specified in the request header
+  Request body is absent in case of GET HTTP request method
+  Request header passes additional information about the request and about the client to the browser
+  Form data can be encoded in the URL when POST method is used
+
+When an HTML page is returned in the form of response from the server it is rendered   by the web browser. As part of processing the browser may discover links to other resources (e.g. an HTML page usually references JavaScript and CSS pages), and will send separate HTTP Requests to download these files.
+
+application/json va normal json ??
+
+“application/json” is the correct mime type which is used to exchange the data in the format of key value pairs, between the applications.
+
+Other options are not CORRECT because their functionality doesn’t match with the given requirement i.e. they can’t be used to send the response in the format of JSON (key value pairs).
+
+
+The <head> element is a container for metadata. Metadata typically contains the document title, character set, styles, scripts, etc. The tags which can go inside <head> are, <title>, <style>, <base>, <link>, <meta>, <script>, <noscript>. So, <a> tag cannot be used inside head tag.
+
