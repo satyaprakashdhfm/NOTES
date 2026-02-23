@@ -1,0 +1,357 @@
+AI INVOICE AUDITOR - PROJECT PROBLEM STATEMENT
+================================================
+
+PROJECT OVERVIEW
+----------------
+A global logistics firm receives hundreds of vendor invoices daily in different formats
+(PDF, DOCX, scanned images) and languages (English, Spanish, German, etc.). Manual review
+is time-consuming, error-prone, and costly. The company needs an Agentic AI system to
+automate invoice validation against internal ERP records.
+
+OBJECTIVE
+---------
+Design and implement an end-to-end Agentic AI system using AWS Bedrock LLMs that:
+- Ingests multilingual invoices from a simulated mailbox
+- Extracts and translates invoice data to English
+- Validates invoice line-items against a mock ERP system
+- Indexes invoice data for RAG-based question answering
+- Generates validation reports with audit trails
+- Supports human-in-the-loop feedback and corrections
+
+FUNCTIONAL REQUIREMENTS
+-----------------------
+1. Invoice Monitoring    - Poll /data/incoming for new invoices, trigger workflow
+2. Invoice Extraction    - Handle PDF, DOCX, PNG (OCR); extract header + line items
+3. Translation           - Auto-detect language; translate to English via AWS Bedrock
+4. Validation
+   a) Invoice Data       - Check field completeness (rules.yaml), verify totals
+   b) Business           - Call ERP API (GET /po, GET /vendor); flag >5% discrepancies
+5. Reporting             - JSON + HTML report; recommendation: Approve/Manual Review/Reject
+6. RAG-based Querying    - Index invoices into FAISS; retrieve, generate, reflect (RAG Triad)
+7. Human-in-the-Loop     - Dashboard to review, approve/reject/edit, re-run, store feedback
+
+TECHNOLOGY STACK
+----------------
+Language:        Python 3.10+
+Framework:       LangGraph, LangChain
+Backend (ERP):   FastAPI
+Frontend (UI):   Streamlit
+OCR:             Pytesseract
+Document Parse:  PyPDFLoader, python-docx
+Vector DB:       FAISS
+Schema Valid:    Pydantic
+Translation:     AWS Bedrock (Cohere Command R+)
+Observability:   Langfuse
+
+AWS BEDROCK MODELS
+------------------
+Task                              Model                    Reason
+--------------------------------  -----------------------  --------------------------------
+Extraction / Validation / Report  amazon.nova-lite-v1:0    Cost-efficient, structured JSON
+Translation / RAG Q&A / Reflect   cohere.command-r-plus    Multilingual + factual accuracy
+Embeddings                        cohere.embed-english-v3  Semantic vector search
+
+AGENT SPECIFICATION
+-------------------
+Agent                       LLM?  Model              Function
+--------------------------  ----  -----------------  -----------------------------------
+Invoice Monitor             No    -                  Detect new files, load attachments
+Extractor                   Yes   Nova Lite          Parse fields from translated text
+Translation                 Yes   Cohere Command R+  Translate invoice to English
+Invoice Data Validation     Yes   Nova Lite          Check fields, totals, rules.yaml
+Business Validation         Yes   Nova Lite          Compare invoice vs ERP records
+Reporting                   Yes   Nova Lite          Generate JSON + HTML report
+RAG Indexing                No    -                  Chunk + embed invoices into FAISS
+RAG Retrieval               No    -                  Similarity search, build context
+RAG Generation              Yes   Cohere Command R+  Answer user query from context
+RAG Reflection              Yes   Cohere Command R+  RAG Triad evaluation of answer
+Human Interface             No    -                  UI for review and chat
+
+CONFIG FILES
+------------
+config/rules.yaml
+  - required_fields: header (invoice_no, invoice_date, vendor_id, currency, total_amount)
+                     line_item (item_code, description, qty, unit_price, total)
+  - tolerances: price +/-5%, quantity exact, tax +/-2%
+  - accepted_currencies: USD, EUR, INR, GBP
+  - validation_policies: missing->flag, total mismatch->manual_review, bad currency->reject
+  - auto_approve_confidence_threshold: 0.95
+
+config/persona_invoice_agent.yaml
+  - Agent persona roles and responsibilities
+
+FOLDER STRUCTURE
+----------------
+project/
+├── pyproject.toml
+├── src/
+│   ├── main.py                     # LangGraph graph (all nodes + edges)
+│   ├── llms.py                     # Bedrock LLM + embedding instances
+│   ├── types.py                    # Shared TypedDicts
+│   ├── agents/
+│   │   ├── monitor_agent.py
+│   │   ├── extractor_agent.py
+│   │   ├── translation_agent.py
+│   │   ├── validation_agent.py
+│   │   ├── reporting_agent.py
+│   │   ├── rag_subgraph.py
+│   │   └── rag_agents/
+│   │       ├── indexing_agent.py
+│   │       ├── retrieval_agent.py
+│   │       ├── generation_agent.py
+│   │       └── reflection_agent.py
+│   ├── config/
+│   │   ├── rules.yaml
+│   │   └── persona_invoice_agent.yaml
+│   ├── data/incoming/              # Invoice drop-zone (.meta.json + attachments)
+│   ├── mock_erp/
+│   │   ├── app.py                  # FastAPI ERP server
+│   │   └── data/                   # PO Records.json, vendors.json, sku_master.json
+│   └── ui/
+│       └── streamlit_app.py
+
+DELIVERABLES
+------------
+1. Source code (GitHub repo)
+2. Working demo (video or live)
+3. Presentation slides (max 5 slides)
+4. Prompt templates and persona files (.yaml)
+
+EVALUATION CRITERIA (50 Marks)
+-------------------------------
+Functional completeness:       35%
+RAG & Agentic integration:     25%
+UI & Human-in-the-loop:        15%
+Code quality & modularity:     15%
+Agile Methodology:             10%
+
+END OF PROBLEM STATEMENT
+
+================================================
+SOLUTION — VERSION 1
+================================================
+
+OVERVIEW
+--------
+Single LangGraph StateGraph with InMemorySaver checkpointer. All 7 pipeline stages
+are nodes in one graph. interrupt() pauses the graph at HITL and chat nodes so
+Streamlit can collect human input and resume via Command(resume=...). Langfuse
+@observe decorators and CallbackHandler trace every LLM call for cost/token tracking.
+
+ARCHITECTURE
+------------
+  data/incoming/
+       |
+       v
+  [monitor] -> [translator] -> [extractor] -> [validator] -> [reporter]
+                                                                  |
+                                                         [hitl]  (interrupt -> Streamlit)
+                                                                  |
+                                                         [chat]  (interrupt -> Streamlit)
+                                                                  |
+                                                     new files? -+-> back to [monitor]
+
+GRAPH STATE
+-----------
+  messages   : list[BaseMessage]  -- chat history (HumanMessage + AIMessage)
+  invoices   : list[dict]         -- raw invoices with loaded Document attachments
+  translated : list[dict]         -- after translation node
+  extracted  : list[dict]         -- structured fields after extractor
+  validated  : list[dict]         -- validation results (invoice + business)
+  reported   : list[dict]         -- final reports + human decisions
+
+NODE DETAILS
+------------
+1. Monitor
+   - Reads .processed_invoices.json cache; only loads NEW *.meta.json files
+   - PDF -> PyPDFLoader | DOCX -> Docx2txtLoader | PNG -> pytesseract OCR
+   - Watchdog background thread detects files dropped during active session
+
+2. Translator
+   - Sends full invoice text to Cohere Command R+ (AWS Bedrock)
+   - Translates all non-English content; vendor names preserved as-is
+
+3. Extractor
+   - Nova Lite + JsonOutputParser extracts structured header + line_items
+   - Defensive fallbacks: missing invoice_no -> uuid, vendor_id/PO_Number -> "UNKNOWN"
+
+4. Validator
+   - Chain 1 (Invoice Data): required fields + data types + totals from rules.yaml
+   - Chain 2 (Business): fetches ERP data via @tool functions (get_po, get_vendor)
+     calling FastAPI mock ERP at http://127.0.0.1:8000; compares vs tolerances
+
+5. Reporter
+   - Nova Lite outputs: invoice_no, discrepancy_summary, missing_fields,
+     translation_confidence, recommendation (Approve / Manual_Review), html
+
+6. HITL
+   - Calls interrupt() for each "Manual_Review" invoice
+   - Receives: Approved | Rejected | Edit (PO number, currency, vendor name)
+   - Stores human_decision + human_edited_data in reported state
+
+7. Chat (RAG Q&A)
+   - Dumps state to data.json; calls interrupt() for user query
+   - Invokes RAG subgraph; returns AIMessage; loops back if new files detected
+
+RAG SUBGRAPH
+------------
+  Conditional entry: new invoices? -> index first, else skip to retrieval
+
+  Indexing   : Incremental FAISS (merge_from); chunk_size=1000, overlap=200;
+               metadata per chunk: invoice_no, validation_status, human_decision,
+               was_edited, vendor_name, po_number, currency
+  Retrieval  : similarity_search(k=10); dedup by invoice_no;
+               context = INVOICE SUMMARY (unique list) + DETAILED CHUNKS
+  Generation : Cohere Command R+ answers from structured context;
+               uses INVOICE SUMMARY for counting to avoid duplicate counts
+  Reflection : Cohere Command R+ (temp=0) evaluates via RAG Triad:
+               Groundedness, Answer Relevance, Context Relevance
+
+MOCK ERP (FastAPI)
+------------------
+  GET /po/{po_number}     -> PO Records.json (indexed by po_number)
+  GET /vendor/{vendor_id} -> vendors.json    (indexed by vendor_name)
+
+STREAMLIT UI
+------------
+  Phase 1 - HITL Review:
+    - Shows incoming file list + deduplicated invoice summary
+    - On interrupt: extracted / validated / reported JSON side by side
+    - Approve / Reject -> Command(resume={decision})
+    - Edit -> dialog modal -> Command(resume={decision: "Edit", edit_data: {...}})
+
+  Phase 2 - Chat Q&A:
+    - st.chat_input -> Command(resume=user_query) -> RAG answer displayed
+
+HOW TO RUN
+----------
+  cd project && pip install -e .
+  uvicorn src.mock_erp.app:app --host 127.0.0.1 --port 8000   # terminal 1
+  streamlit run src/ui/streamlit_app.py                        # terminal 2
+
+  .env required:
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION=us-east-1
+    LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST
+
+KNOWN LIMITATIONS
+-----------------
+  1. max_tokens=100 on Nova Lite calls may truncate complex invoices
+  2. Vendor lookup by name -- fragile if name differs between invoice and ERP
+  3. Single thread_id -- one invoice batch per session
+  4. No persistent storage -- HITL decisions lost on Streamlit restart
+  5. persona_invoice_agent.yaml and monitoring.py are empty/unused
+  6. RAG reflection output not surfaced to the UI
+
+END OF VERSION 1 SOLUTION
+
+================================================
+SOLUTION — VERSION 2
+================================================
+
+OVERVIEW
+--------
+Version 2 replaces Streamlit with React, replaces FastAPI mock ERP with a Validation
+MCP Server, and introduces MCP + A2A protocols throughout. The backend becomes an MCP
+Main Server exposing 3 tools. The LangGraph pipeline is packaged as a Main Graph A2A
+Agent. The RAG subgraph is promoted to a standalone RAG A2A Server. All inter-component
+communication uses standard protocols instead of direct Python imports.
+
+WHAT CHANGED FROM VERSION 1
+----------------------------
+  Frontend       : Streamlit              ->  React (JS/TS)
+  Backend entry  : direct graph.invoke()  ->  MCP Main Server (3 MCP tools)
+  ERP validation : FastAPI REST server    ->  Validation MCP Server (MCP tools)
+  Main Graph     : standalone graph       ->  Main Graph A2A Agent (A2A server)
+  RAG subgraph   : inline rag_subgraph.py ->  RAG A2A Server (A2A server)
+  Protocols      : direct Python calls    ->  MCP (React <-> backend)
+                                              A2A (agent <-> agent)
+
+ARCHITECTURE
+------------
+  React Frontend
+      |
+      | MCP tool calls (3 tools)
+      v
+  MCP Main Server --------MCP client------> Validation MCP Server
+      |                                       get_po(po_number)
+      | A2A client                            get_vendor(vendor_id)
+      v                                       (reads JSON files directly)
+  Main Graph A2A Agent
+      | [monitor -> translator -> extractor -> validator -> reporter -> hitl -> chat]
+      |
+      | A2A client (from chat node)
+      v
+  RAG A2A Server
+      [indexing -> retrieval -> generation -> reflection]
+
+MCP MAIN SERVER
+---------------
+  Roles: MCP Server (to React) + MCP Client (to Validation MCP Server)
+         + A2A Client (to Main Graph A2A Agent)
+
+  Tool 1 — run_pipeline
+    Calls Main Graph A2A Agent to run monitor->translator->extractor->validator->reporter
+    Validator fetches ERP data by calling Validation MCP Server tools
+    Graph pauses at hitl interrupt(); returns interrupt payload to React
+
+  Tool 2 — resume_validation
+    Calls Main Graph A2A Agent to resume from hitl interrupt
+    Passes Command(resume={decision, edit_data}); graph pauses at chat interrupt
+
+  Tool 3 — chat_query
+    Calls Main Graph A2A Agent to resume from chat interrupt
+    Chat node calls RAG A2A Server via A2A; returns AIMessage answer to React
+
+VALIDATION MCP SERVER
+---------------------
+  Replaces : FastAPI mock ERP (no HTTP REST endpoints needed)
+  Tools    : get_po(po_number)     -> reads PO Records.json
+             get_vendor(vendor_id) -> reads vendors.json
+  Called by: MCP Main Server during validator node execution
+
+MAIN GRAPH A2A AGENT
+--------------------
+  Wraps    : entire LangGraph main graph (all 7 nodes, logic unchanged from V1)
+  Protocol : A2A server -- called by MCP Main Server
+  Also     : A2A client -- calls RAG A2A Server from within the chat node
+
+RAG A2A SERVER
+--------------
+  Wraps    : full RAG pipeline (indexing, retrieval, generation, reflection)
+  Protocol : A2A server -- called by Main Graph A2A Agent from chat node
+  Internals: unchanged from V1 (FAISS, Cohere Embed, Cohere Command R+)
+
+REACT FRONTEND
+--------------
+  Phase 1 - HITL Review:
+    - Calls run_pipeline on load; shows invoice summary cards
+    - On interrupt: extracted / validated / reported side by side
+    - Approve/Reject -> resume_validation({decision})
+    - Edit -> form modal -> resume_validation({decision: "Edit", edit_data})
+
+  Phase 2 - Chat Q&A:
+    - Chat input -> chat_query(user_query) -> answer displayed in thread
+
+COMPONENT ROLES SUMMARY
+-----------------------
+  Component              Protocol Role    Direction
+  ---------------------  ---------------  -----------------------------------------
+  React App              MCP Client       Calls MCP Main Server (3 tools)
+  MCP Main Server        MCP Server       Serves React
+  MCP Main Server        MCP Client       Calls Validation MCP Server
+  MCP Main Server        A2A Client       Calls Main Graph A2A Agent
+  Validation MCP Server  MCP Server       Serves MCP Main Server
+  Main Graph A2A Agent   A2A Server       Serves MCP Main Server
+  Main Graph A2A Agent   A2A Client       Calls RAG A2A Server
+  RAG A2A Server         A2A Server       Serves Main Graph A2A Agent
+
+KEY DESIGN DECISIONS
+--------------------
+  1. React over Streamlit: production-grade UI; clean MCP-based API contract
+  2. MCP Main Server as single gateway: React knows only 3 tool signatures
+  3. Validation MCP Server: ERP tools swappable with real enterprise MCP server
+  4. Main Graph as A2A Agent: pipeline reusable by any A2A-compatible orchestrator
+  5. RAG as A2A Server: independently deployable, reusable across pipelines
+  6. Three tools map to three phases: run_pipeline / resume_validation / chat_query
+
+END OF VERSION 2 SOLUTION
