@@ -315,7 +315,7 @@ for i in range(len(s)):
 Time: `O(n)`
 
 3. All continuous substrings (general substrings)
-
+n(n+1)/2
 ```python
 s = "aabcb"
 
@@ -348,3 +348,94 @@ and
 for i in range(len(s)):
     for j in range(i, len(s)):
         Counter(s[i:j+1])
+
+
+
+
+problem : 3
+
+You can keep notes like this.
+
+O(n³) patterns
+Usually happens when **nested loops + extra work inside**.
+
+Common causes
+• substring slicing `s[i:j]`
+• `set()`, `Counter()`, `list()` inside loops
+• `sum()`, `max()` recomputation
+
+Pattern
+
+```
+for i in n
+    for j in n
+        O(n) work
+```
+
+Example
+checking substring uniqueness using `set()` each time.
+
+Avoid by
+• storing results in **set/dict**
+• incremental updates.
+
+O(n²) patterns
+Usually **two nested loops**.
+
+Pattern
+
+```
+for i in n
+    for j in n
+```
+
+Common problems
+• substrings
+• pair comparisons
+• brute force searching
+
+Improve using
+• **hash set / hash map**
+• **break early when condition fails**.
+
+O(n) patterns
+Process each element **once**.
+
+Techniques
+
+**1. Sliding Window**
+Used for substring/subarray problems.
+
+Example
+longest substring without repeat.
+
+**2. Hash Map / Hash Set**
+Used for fast lookup.
+
+Example
+two sum, duplicates.
+
+**3. Prefix Sum**
+Used for range sum queries.
+
+**4. Single pass accumulation**
+
+```
+for x in arr
+    update_state
+```
+
+Quick rule while coding
+
+If you see
+• substring slicing
+• repeated `set()` or `Counter()`
+• repeated scanning
+
+Try replacing with
+• sliding window
+• hash set / dictionary
+• prefix sum.
+
+
+
