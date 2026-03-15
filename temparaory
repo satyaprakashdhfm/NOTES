@@ -1,3 +1,255 @@
+    JavaScript heap memory limits - Chrome and Electron-based apps (which Windsurf likely is) have individual process memory limits, usually around 1.4-1.7GB per tab/process, regardless of available system RAM 
+
+    GPU memory shortage - AI processing often uses GPU memory (VRAM). If your GPU is running low on VRAM, it can cause these errors even with plenty of system RAM 
+
+    Virtual memory/page file issues - Windows might have insufficient virtual memory configured 
+
+    Memory fragmentation - Available RAM isn't contiguous enough for large allocations 
+
+    32-bit process limitations - Some components might be 32-bit limited to ~3GB 
+
+Summary of What We Found: 
+
+    Problem: Your PC was stuck using NextDNS servers (208.67.222.123, 208.67.220.123) instead of your router's OpenDNS 
+
+    Not the router: Your router is correctly set to OpenDNS, but your PC was overriding it 
+
+    Not manual DNS: No manual DNS settings found in Windows network configuration 
+
+    Not NextDNS software: No NextDNS application was installed on your system 
+
+    Found the culprit: ExpressVPN is running in the background (expressvpnd process) 
+
+    Root cause: ExpressVPN's "ZTDNS Helper service" forces all DNS requests through NextDNS servers 
+
+    System-wide issue: This affects your entire PC, not just your user account 
+
+    VPN DNS protection: Even when ExpressVPN is "disconnected," its DNS leak protection stays active 
+
+    Service running: ExpressVPN Service and ZTHELPER service are both running 
+
+    Solution needed: Disable ZTDNS Helper service to restore normal DNS functionality 
+
+Bottom line: ExpressVPN's background DNS protection is hijacking all your DNS requests and forcing them through NextDNS servers. 
+
+ 
+
+What is swap memory and its usages 
+
+Top 5 Vi/Vim Shortcuts: 
+
+1. Mode Switching 
+
+    i - Enter INSERT mode (start typing) 
+
+    Esc - Return to COMMAND mode (navigate/delete) 
+
+2. Save & Quit 
+
+    :w - Save file 
+
+    :q - Quit 
+
+    :wq or :x - Save and quit 
+
+    :q! - Quit without saving 
+
+3. Navigation 
+
+    h j k l - Left, Down, Up, Right (arrow keys) 
+
+    0 - Beginning of line 
+
+    $ - End of line 
+
+4. Delete/Cut 
+
+    x - Delete character under cursor 
+
+    dd - Delete entire line 
+
+    dw - Delete word 
+
+5. Copy & Paste 
+
+    yy - Copy (yank) entire line 
+
+    p - Paste after cursor 
+
+    P - Paste before cursor 
+
+Memory Tips: 
+
+    i = insert, Esc = escape to command mode 
+
+    d = delete, y = yank (copy), p = paste 
+
+    w = write (save), q = quit 
+
+These 5 categories cover 90% of basic vi usage! 
+
+ 
+
+Here's a comprehensive overview of vi commands and concepts: 
+
+Modes in Vi 
+
+    Normal/Command Mode - Default mode for navigation and commands 
+
+    Insert Mode - For typing text (i, a, o, A, I, O) 
+
+    Visual Mode - For selecting text (v, V, Ctrl+v) - limited in original vi 
+
+    Command Line Mode - For ex commands (:, /, ?) 
+
+Cursor Movement 
+
+Basic Movement 
+
+    h - left 
+
+    j - down 
+
+    k - up 
+
+    l - right 
+
+    w - next word 
+
+    b - previous word 
+
+    e - end of word 
+
+Line Movement 
+
+    0 - beginning of line 
+
+    ^ - first non-blank character 
+
+    $ - end of line 
+
+    G - last line of file 
+
+    gg or 1G - first line of file 
+
+    5G - go to line 5 
+
+Screen Movement 
+
+    Ctrl+f - page down 
+
+    Ctrl+b - page up 
+
+    Ctrl+d - half page down 
+
+    Ctrl+u - half page up 
+
+    H - top of screen 
+
+    M - middle of screen 
+
+    L - bottom of screen 
+
+Entering Insert Mode 
+
+    i - insert before cursor 
+
+    a - insert after cursor 
+
+    I - insert at beginning of line 
+
+    A - insert at end of line 
+
+    o - open new line below 
+
+    O - open new line above 
+
+    s - substitute character (delete char and insert) 
+
+    S - substitute line (delete line and insert) 
+
+Copy (Yank) Commands 
+
+    yy - copy entire line 
+
+    yw - copy word 
+
+    y$ - copy to end of line 
+
+    y0 - copy to beginning of line 
+
+    5yy - copy 5 lines 
+
+Paste Commands 
+
+    p - paste after cursor/below line 
+
+    P - paste before cursor/above line 
+
+Search and Replace 
+
+    /pattern - search forward 
+
+    ?pattern - search backward 
+
+    n - next search result 
+
+    N - previous search result 
+
+    :s/old/new/ - replace first occurrence in line 
+
+    :s/old/new/g - replace all in line 
+
+    :%s/old/new/g - replace all in file 
+
+Undo/Redo 
+
+    u - undo last change 
+
+    U - undo all changes to current line 
+
+    Ctrl+r - redo (in some vi versions) 
+
+File Operations 
+
+    :w - save file 
+
+    :q - quit 
+
+    :wq or :x - save and quit 
+
+    :q! - quit without saving 
+
+    :e filename - open file 
+
+Other Useful Commands 
+
+    . - repeat last command 
+
+    r - replace single character 
+
+    R - enter replace mode 
+
+    ~ - toggle case of character 
+
+    J - join lines 
+
+    Ctrl+g - show file status 
+
+    :set number - show line numbers 
+
+    >> - indent line 
+
+    << - unindent line 
+
+ 
+
+ 
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
 Choose FALSE statements-
   Protocol version used by the client is specified in the request header
   Request body is absent in case of GET HTTP request method
