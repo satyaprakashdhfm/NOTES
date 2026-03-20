@@ -438,4 +438,123 @@ Try replacing with
 • prefix sum.
 
 
+------------------------------------arrays----------------------------
 
+core subarray patterns (very short + usable)
+
+1. prefix sum + hashmap (most important)
+
+* use when: sum = k, sum = 0, longest subarray
+* idea: same prefix sum repeats → middle = 0
+* template:
+
+```python
+sum = 0
+seen = {0:-1}
+for i in range(n):
+    sum += arr[i]
+    if (sum-k) in seen:  # for sum=k
+        # found subarray
+    if sum not in seen:
+        seen[sum] = i
+```
+
+2. sliding window (two pointers)
+
+* use when: positive numbers / fixed condition
+* idea: expand right, shrink left
+
+```python
+l = 0
+sum = 0
+for r in range(n):
+    sum += arr[r]
+    while sum > k:
+        sum -= arr[l]
+        l += 1
+```
+
+3. kadane’s algorithm
+
+* use when: max subarray sum
+
+```python
+max_sum = cur = arr[0]
+for i in range(1,n):
+    cur = max(arr[i], cur+arr[i])
+    max_sum = max(max_sum, cur)
+```
+
+4. prefix sum array (range queries)
+
+* use when: many sum queries
+
+```python
+pre[0] = arr[0]
+for i in range(1,n):
+    pre[i] = pre[i-1] + arr[i]
+# sum(l,r) = pre[r] - pre[l-1]
+```
+
+5. count subarrays with sum = k
+
+* slight change of hashmap
+
+```python
+count = 0
+sum = 0
+seen = {0:1}
+for x in arr:
+    sum += x
+    count += seen.get(sum-k,0)
+    seen[sum] = seen.get(sum,0) + 1
+```
+
+6. longest subarray with sum = 0
+
+```python
+sum = 0
+seen = {0:-1}
+ans = 0
+for i,x in enumerate(arr):
+    sum += x
+    if sum in seen:
+        ans = max(ans, i-seen[sum])
+    else:
+        seen[sum] = i
+```
+
+quick mapping (important):
+
+* negatives present → prefix sum
+* only positives → sliding window
+* max sum → kadane
+* count → hashmap freq
+* longest → store first index
+
+if you want, i can compress this into 1-page cheat sheet for interviews.
+yes — **not among those**
+
+it’s a different pattern:
+
+---
+
+**7. greedy (min so far)**
+
+* use when: buy/sell, maximize profit
+* idea: track lowest till now, compute profit
+
+```python id="g7v1k9"
+min_price = prices[0]
+max_profit = 0
+
+for i in range(1, len(prices)):
+    min_price = min(min_price, prices[i])
+    max_profit = max(max_profit, prices[i] - min_price)
+```
+
+---
+
+quick mapping add:
+
+* stock buy/sell → greedy (min so far)
